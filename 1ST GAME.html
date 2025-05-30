@@ -19,6 +19,57 @@
             background-attachment: fixed;
             color: white;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+        }
+        
+        .intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: opacity 0.5s;
+        }
+        
+        .intro-title {
+            font-size: 5em;
+            margin-bottom: 30px;
+            text-align: center;
+            background: linear-gradient(90deg, #ff00ff, #00ffff, #ffff00, #ff00ff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: neonGlow 5s linear infinite;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        
+        @keyframes neonGlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 400% 50%; }
+        }
+        
+        .start-btn {
+            padding: 15px 40px;
+            font-size: 1.5em;
+            background: linear-gradient(45deg, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(76, 175, 80, 0.8);
         }
         
         .game-container {
@@ -29,6 +80,7 @@
             text-align: center;
             max-width: 500px;
             width: 90%;
+            position: relative;
         }
         
         h1 {
@@ -132,10 +184,72 @@
             background-color: rgba(255, 255, 0, 0.3);
             box-shadow: 0 0 15px gold;
         }
+        
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        
+        .celebration.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .celebration-text {
+            font-size: 4em;
+            margin-bottom: 30px;
+            text-align: center;
+            background: linear-gradient(90deg, #ff00ff, #00ffff, #ffff00, #ff00ff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: neonGlow 3s linear infinite;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.7);
+        }
+        
+        .continue-btn {
+            padding: 15px 40px;
+            font-size: 1.2em;
+            background: linear-gradient(45deg, #2196F3, #0D47A1);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(33, 150, 243, 0.5);
+        }
+        
+        .continue-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(33, 150, 243, 0.8);
+        }
     </style>
 </head>
 <body>
-    <div class="game-container">
+    <div class="intro-screen" id="introScreen">
+        <div class="intro-title">Tic-Tac-Toe</div>
+        <button class="start-btn" id="startBtn">Start Game</button>
+    </div>
+    
+    <div class="celebration" id="celebration">
+        <div class="celebration-text" id="celebrationText">Congratulations!</div>
+        <button class="continue-btn" id="continueBtn">Play Again</button>
+    </div>
+    
+    <div class="game-container" id="gameContainer" style="display: none;">
         <h1>Tic-Tac-Toe</h1>
         
         <div class="player-settings">
@@ -177,12 +291,18 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const introScreen = document.getElementById('introScreen');
+            const startBtn = document.getElementById('startBtn');
+            const gameContainer = document.getElementById('gameContainer');
             const board = document.getElementById('board');
             const cells = document.querySelectorAll('.cell');
             const status = document.querySelector('.status');
             const resetButton = document.getElementById('reset');
             const xColorPicker = document.getElementById('x-color-picker');
             const oColorPicker = document.getElementById('o-color-picker');
+            const celebration = document.getElementById('celebration');
+            const celebrationText = document.getElementById('celebrationText');
+            const continueBtn = document.getElementById('continueBtn');
             
             let currentPlayer = 'X';
             let gameState = ['', '', '', '', '', '', '', '', ''];
@@ -195,6 +315,21 @@
                 [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
                 [0, 4, 8], [2, 4, 6]             // diagonals
             ];
+            
+            // Start game from intro screen
+            startBtn.addEventListener('click', () => {
+                introScreen.style.opacity = '0';
+                setTimeout(() => {
+                    introScreen.style.display = 'none';
+                    gameContainer.style.display = 'block';
+                }, 500);
+            });
+            
+            // Continue after celebration
+            continueBtn.addEventListener('click', () => {
+                celebration.classList.remove('active');
+                resetGame();
+            });
             
             // Initialize color pickers
             function initColorPickers() {
@@ -268,12 +403,20 @@
                     });
                     status.textContent = `Player ${currentPlayer} wins!`;
                     gameActive = false;
+                    
+                    // Show celebration
+                    celebrationText.textContent = `Player ${currentPlayer} Wins!`;
+                    celebration.classList.add('active');
                     return;
                 }
                 
                 if (!gameState.includes('')) {
                     status.textContent = "Game ended in a draw!";
                     gameActive = false;
+                    
+                    // Show celebration for draw
+                    celebrationText.textContent = "It's a Draw!";
+                    celebration.classList.add('active');
                     return;
                 }
                 
